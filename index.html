@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salmon</title>
+  <script src="../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/background.png" alt="background" data-name="background">
+  <img class="hidden" src="images/dudel_0001.png" alt="dudel_0001" data-name="dudel_0001">
+  <img class="hidden" src="images/dudel_0002.png" alt="dudel_0002" data-name="dudel_0002">
+  <img class="hidden" src="images/dudel_0003.png" alt="dudel_0003" data-name="dudel_0003">
+  <img class="hidden" src="images/dudel_0004.png" alt="dudel_0004" data-name="dudel_0004">
+  <img class="hidden" src="images/dudel_0005.png" alt="dudel_0005" data-name="dudel_0005">
+  <img class="hidden" src="images/dudel_0006.png" alt="dudel_0006" data-name="dudel_0006">
+  <img class="hidden" src="images/walkr_0001.png" alt="walkr_0001" data-name="walkr_0001">
+  <img class="hidden" src="images/walkr_0002.png" alt="walkr_0002" data-name="walkr_0002">
+  <img class="hidden" src="images/walkr_0003.png" alt="walkr_0003" data-name="walkr_0003">
+  <img class="hidden" src="images/walkr_0004.png" alt="walkr_0004" data-name="walkr_0004">
+  <img class="hidden" src="images/walkr_0005.png" alt="walkr_0005" data-name="walkr_0005">
+  <img class="hidden" src="images/walkr_0006.png" alt="walkr_0006" data-name="walkr_0006">
+</section>
+
+<main>
+<h1>Salmon</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Attribution</h2>
+
+<p>Images licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
+
+</main>
+
+<script>
+WIDTH = 800;
+HEIGHT = 400;
+
+/*
+ * Duration in seconds to stay on each frame.
+ */
+const ANIMATION_RATE = 0.1;
+
+/*
+ * Integer number of dudes to create.
+ */
+const DUDE_COUNT = 50;
+
+/*
+ * Integer number of pixels to traverse in a second.
+ */
+const WALK_RATE = WIDTH / 10;
+
+/*
+ * Return a random integer N such that min <= N < max.
+ */
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+class AnimatedActor extends Actor {
+  constructor(prefix, frameCount, startIndex = 1) {
+    if (typeof prefix !== 'string') {
+      throw new TypeError('prefix must be a non-empty string.');
+    }
+    if (prefix.length <= 0) {
+      throw new RangeError('prefix must be a non-empty string.');
+    }
+    if (typeof frameCount !== 'number') {
+      throw new TypeError('frameCount must be a positive number.');
+    }
+    if (frameCount <= 0) {
+      throw new RangeError('frameCount must be a positive number.');
+    }
+    if (typeof startIndex !== 'number') {
+      throw new TypeError('startIndex must be a positive number.');
+    }
+    if (startIndex <= 0) {
+      throw new RangeError('startIndex must be a positive number.');
+    }
+    super(prefix + startIndex);
+
+    this.prefix = prefix;
+    this.frameCount = frameCount;
+    this.timer = 0;
+    this.index = startIndex;
+  }
+
+  update(dt) {
+    this.timer += dt;
+
+    if (this.timer > ANIMATION_RATE) {
+      this.timer = 0;
+      this.index += 1;
+      if (this.index > this.frameCount) {
+        this.index = 1;
+      }
+      this.name = this.prefix + this.index;
+    }
+  }
+}
+
+var bloke, dudes;
+
+function reset() {
+  bloke = new AnimatedActor('walkr_000', 6);
+  bloke.left = 0;
+  bloke.centery = Math.floor(HEIGHT / 2);
+  bloke.animation = animate(bloke, (WIDTH - (bloke.width * 2)) / WALK_RATE, {right: WIDTH}, 'linear');
+
+  dudes = [];
+  for (let i = 0; i < DUDE_COUNT; i++) {
+    let dude = new AnimatedActor('dudel_000', 6, getRandomInteger(1, 7));
+    dude.left = WIDTH + getRandomInteger(0, Math.floor(WIDTH / 2));
+    dude.centery = Math.floor(HEIGHT / 2) + getRandomInteger(-100, 100);
+    dude.animation = animate(dude, (dude.left + dude.width) / WALK_RATE, {right: 0}, 'linear');
+    dudes.push(dude);
+  }
+}
+
+function draw() {
+  screen.blit('background', [-600, 0]);
+
+  for (let d of dudes) {
+    if (d.centery < bloke.centery) {
+      d.draw();
+    }
+  }
+  bloke.draw();
+  for (let d of dudes) {
+    if (d.centery >= bloke.centery) {
+      d.draw();
+    }
+  }
+}
+
+function update(dt) {
+  bloke.update(dt);
+  if (bloke.animation.done) {
+    bloke.left = 0;
+    bloke.animation = animate(bloke, (WIDTH - (bloke.width * 2)) / WALK_RATE, {right: WIDTH}, 'linear');
+  }
+  for (let d of dudes) {
+    d.update(dt);
+    if (d.animation.done) {
+      d.left = WIDTH + getRandomInteger(0, Math.floor(WIDTH / 2));
+      d.index = getRandomInteger(1, 7);
+      d.animation = animate(d, (d.left + d.width) / WALK_RATE, {right: 0}, 'linear');
+    }
+  }
+}
+
+window.addEventListener('load', (event) => {
+  images.LOAD('#imageLoader img');
+  reset();
+  screen.set_mode('#screen', '#reset', '#pause');
+});
+</script>
+</body>
+
+</html>
