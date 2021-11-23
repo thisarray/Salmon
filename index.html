@@ -97,10 +97,13 @@ class AnimatedActor extends Actor {
       throw new RangeError('frameCount must be a positive number.');
     }
     if (typeof startIndex !== 'number') {
-      throw new TypeError('startIndex must be a positive number.');
+      throw new TypeError('startIndex must be a positive number <= frameCount.');
     }
     if (startIndex <= 0) {
-      throw new RangeError('startIndex must be a positive number.');
+      throw new RangeError('startIndex must be a positive number <= frameCount.');
+    }
+    if (startIndex > frameCount) {
+      throw new RangeError('startIndex must be a positive number <= frameCount.');
     }
     super(prefix + startIndex);
 
