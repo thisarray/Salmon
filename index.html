@@ -115,14 +115,13 @@ class AnimatedActor extends Actor {
 
   update(dt) {
     this.timer += dt;
-
     if (this.timer > ANIMATION_RATE) {
-      this.timer = 0;
-      this.index += 1;
+      this.index++;
       if (this.index > this.frameCount) {
         this.index = 1;
       }
       this.name = this.prefix + this.index;
+      this.timer = 0;
     }
   }
 }
@@ -178,9 +177,7 @@ function update(dt) {
 }
 
 window.addEventListener('load', (event) => {
-  images.LOAD('#imageLoader img');
-  reset();
-  screen.set_mode('#screen', '#reset', '#pause');
+  screen.init();
 });
 </script>
 </body>
