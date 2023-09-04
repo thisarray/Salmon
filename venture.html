@@ -66,12 +66,17 @@ const QUARTER_HEIGHT = Math.floor(HEIGHT / 4);
 const BAR_TOP = HEIGHT - QUARTER_HEIGHT;
 
 /*
+ * Array background color (brown).
+ */
+const BACKGROUND_COLOR = [165, 42, 42];
+
+/*
  * Duration in seconds to stay on each frame.
  */
 const ANIMATION_RATE = 0.1;
 
-class AnimatedActor extends Actor {
-  constructor(prefix, frameCount, startIndex = 1) {
+class AnimatedActor {
+  constructor(prefix, frameCount, x, startIndex = 1) {
     if (typeof prefix !== 'string') {
       throw new TypeError('prefix must be a non-empty string.');
     }
@@ -93,12 +98,20 @@ class AnimatedActor extends Actor {
     if (startIndex > frameCount) {
       throw new RangeError('startIndex must be a positive number <= frameCount.');
     }
-    super(prefix + startIndex);
 
     this.prefix = prefix;
     this.frameCount = frameCount;
     this.timer = 0;
     this.index = startIndex;
+
+    this.name = this.prefix + this.index;
+    this.x = x;
+  }
+
+  draw(silhouetteMap) {
+    let surface = silhouetteMap.get(this.name),
+        y = BAR_TOP - surface.height;
+    screen.blit(surface, [this.x, y]);
   }
 
   update(dt) {
@@ -114,21 +127,47 @@ class AnimatedActor extends Actor {
   }
 }
 
-let dean, hank;
+let silhouetteMap, dean, hank;
 
 function reset() {
-  dean = new AnimatedActor('walkl_', 6);
-  dean.bottomleft = [HALF_WIDTH + 100, BAR_TOP];
-  hank = new AnimatedActor('dudel_000', 6);
-  hank.bottomleft = [dean.right + Math.floor(dean.width / 2), BAR_TOP];
+  // Turn the images into silhouettes
+  silhouetteMap = new Map();
+  let name, surface, color;
+  for (let i = 1; i <= 6; i++) {
+    for (let [prefix, venture] of [
+      ['walkl_', 'dean'],
+      ['dudel_000', 'hank']]) {
+      name = prefix + i;
+      screen.clear(BACKGROUND_COLOR);
+      screen.blit(name, [0, 0]);
+      surface = screen.getSurface(images[name].width, images[name].height);
+
+      for (let x = 0; x < surface.width; x++) {
+        for (let y = 0; y < surface.height; y++) {
+          color = surface.getAt(x, y);
+          if (!Surface.isColorEqual(color, BACKGROUND_COLOR)) {
+            color[0] = 0;
+            color[1] = 0;
+            color[2] = 0;
+            surface.setAt(x, y, color);
+          }
+        }
+      }
+
+      silhouetteMap.set(venture + i, surface);
+    }
+  }
+
+  dean = new AnimatedActor('dean', 6, HALF_WIDTH + 100);
+  hank = new AnimatedActor('hank', 6, HALF_WIDTH + 100 + 138 + 69, 3);
 }
 
 function draw() {
-  screen.clear('brown');
+  screen.clear(BACKGROUND_COLOR);
   screen.draw.filled_rect(new Rect(0, BAR_TOP, WIDTH, QUARTER_HEIGHT), 'black');
 
-  dean.draw();
-  hank.draw();
+  dean.draw(silhouetteMap);
+  hank.draw(silhouetteMap);
 }
 
 function update(dt) {
