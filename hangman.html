@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hangman</title>
+  <script src="../jsgame0.js"></script>
+  <style type="text/css" media="screen">
+body {
+  background-color: white;
+  color: black;
+}
+.hidden {
+  display: none;
+}
+#original {
+  margin-left: 1em;
+}
+  </style>
+</head>
+
+<body>
+<section id="imageLoader" class="hidden">
+  <img class="hidden" src="images/background.png" alt="background" data-name="background">
+  <img class="hidden" src="images/walkr_0001.png" alt="walkr_0001" data-name="walkr_0001">
+  <img class="hidden" src="images/walkr_0002.png" alt="walkr_0002" data-name="walkr_0002">
+  <img class="hidden" src="images/walkr_0003.png" alt="walkr_0003" data-name="walkr_0003">
+  <img class="hidden" src="images/walkr_0004.png" alt="walkr_0004" data-name="walkr_0004">
+  <img class="hidden" src="images/walkr_0005.png" alt="walkr_0005" data-name="walkr_0005">
+  <img class="hidden" src="images/walkr_0006.png" alt="walkr_0006" data-name="walkr_0006">
+</section>
+
+<main>
+<h1>Hangman</h1>
+
+<canvas id="screen">
+The game screen appears here if your browser supports the Canvas API.
+</canvas>
+<section id="controls">
+  <button type="button" id="reset">Reset</button>
+  <button type="button" id="pause">Pause</button>
+</section>
+
+<h2>Attribution</h2>
+
+<p>Images licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
+
+</main>
+
+<script>
+WIDTH = 1200;
+HEIGHT = 400;
+
+/*
+ * String message to display.
+ */
+const MESSAGE = 'foobar BAZ';
+
+/*
+ * Integer length of the longest message that can be displayed.
+ */
+const LENGTH = 21;
+
+/*
+ * String space character to use.
+ */
+const SPACE = ' ';
+
+/*
+ * Duration in seconds to stay on each frame.
+ */
+const ANIMATION_RATE = 0.1;
+
+/*
+ * Integer number of pixels to traverse in a second.
+ */
+const WALK_RATE = WIDTH / 10;
+
+class AnimatedActor extends Actor {
+  constructor(prefix, frameCount, startIndex = 1) {
+    if (typeof prefix !== 'string') {
+      throw new TypeError('prefix must be a non-empty string.');
+    }
+    if (prefix.length <= 0) {
+      throw new RangeError('prefix must be a non-empty string.');
+    }
+    if (typeof frameCount !== 'number') {
+      throw new TypeError('frameCount must be a positive number.');
+    }
+    if (frameCount <= 0) {
+      throw new RangeError('frameCount must be a positive number.');
+    }
+    if (typeof startIndex !== 'number') {
+      throw new TypeError('startIndex must be a positive number <= frameCount.');
+    }
+    if (startIndex <= 0) {
+      throw new RangeError('startIndex must be a positive number <= frameCount.');
+    }
+    if (startIndex > frameCount) {
+      throw new RangeError('startIndex must be a positive number <= frameCount.');
+    }
+    super(prefix + startIndex);
+
+    this.prefix = prefix;
+    this.frameCount = frameCount;
+    this.timer = 0;
+    this.index = startIndex;
+  }
+
+  update(dt) {
+    this.timer += dt;
+    if (this.timer > ANIMATION_RATE) {
+      this.index++;
+      if (this.index > this.frameCount) {
+        this.index = 1;
+      }
+      this.name = this.prefix + this.index;
+      this.timer = 0;
+    }
+  }
+}
+
+let message, turner;
+
+function reset() {
+  message = MESSAGE.trim().toUpperCase().substring(0, LENGTH);
+  if (message.length < LENGTH) {
+    // Pad message with SPACE to justify it if it is shorter than LENGTH
+    let leftPad = Math.floor((LENGTH - message.length) / 2);
+    message = message.padStart(message.length + leftPad, SPACE);
+    message = message.padEnd(LENGTH, SPACE);
+  }
+
+  turner = new AnimatedActor('walkr_000', 6);
+  turner.left = 0;
+  turner.centery = Math.floor(HEIGHT / 2);
+}
+
+function draw() {
+  screen.blit('background', [0, 0]);
+
+  let i = 0;
+  for (let c of message) {
+    if (c !== SPACE) {
+      let box = new Rect(65 + (50 * i), 120, 50, 70);
+      screen.draw.filled_rect(box, 'lightgreen');
+      screen.draw.rect(box, 'black', 4);
+      screen.draw.text(c, {
+        center: box.center,
+        color: 'black',
+        fontsize: 64
+      });
+    }
+    i++;
+  }
+}
+
+window.addEventListener('load', (event) => {
+  screen.init();
+});
+</script>
+</body>
+
+</html>
