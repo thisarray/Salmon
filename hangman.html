@@ -53,19 +53,39 @@ WIDTH = 1200;
 HEIGHT = 400;
 
 /*
- * String message to display.
+ * String phrase to guess.
  */
-const MESSAGE = 'foobar BAZ';
+const PHRASE = "It's foobar BAZ!";
 
 /*
- * Integer length of the longest message that can be displayed.
+ * Integer length of the longest string that fits on one line.
  */
 const LENGTH = 21;
+
+/*
+ * String letters of the alphabet the user can guess.
+ */
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+/*
+ * String blank character to use.
+ */
+const BLANK = '_';
 
 /*
  * String space character to use.
  */
 const SPACE = ' ';
+
+/*
+ * String color in the background of a letter.
+ */
+const BACKGROUND_COLOR = 'lightgreen';
+
+/*
+ * String color to highlight a letter that was found.
+ */
+const HIGHLIGHT_COLOR = 'yellow';
 
 /*
  * Duration in seconds to stay on each frame.
@@ -121,39 +141,74 @@ class AnimatedActor extends Actor {
   }
 }
 
-let message, turner;
+let solved, puzzle, turner;
 
 function reset() {
-  message = MESSAGE.trim().toUpperCase().substring(0, LENGTH);
-  if (message.length < LENGTH) {
-    // Pad message with SPACE to justify it if it is shorter than LENGTH
-    let leftPad = Math.floor((LENGTH - message.length) / 2);
-    message = message.padStart(message.length + leftPad, SPACE);
-    message = message.padEnd(LENGTH, SPACE);
+  let phrase = PHRASE.trim().toUpperCase().substring(0, LENGTH);
+  if (phrase.length < LENGTH) {
+    // Pad phrase with SPACE to justify it if it is shorter than LENGTH
+    let leftPad = Math.floor((LENGTH - phrase.length) / 2);
+    phrase = phrase.padStart(phrase.length + leftPad, SPACE);
+    phrase = phrase.padEnd(LENGTH, SPACE);
+  }
+  solved = Array.from(phrase);
+
+  puzzle = [];
+  for (let c of solved) {
+    if (ALPHABET.includes(c)) {
+      puzzle.push(BLANK);
+    }
+    else {
+      puzzle.push(c);
+    }
   }
 
   turner = new AnimatedActor('walkr_000', 6);
-  turner.left = 0;
+  turner.right = 0;
   turner.centery = Math.floor(HEIGHT / 2);
+  turner.animation = animate(turner, (WIDTH + (turner.width * 2)) / WALK_RATE, {left: WIDTH}, 'linear');
+}
+
+/*
+ * Draw character in box with a background and a border.
+ */
+function drawCharacter(box, character = BLANK, background = BACKGROUND_COLOR) {
+  screen.draw.filled_rect(box, background);
+  if (character !== BLANK) {
+    screen.draw.text(character, {
+      center: box.center,
+      color: 'black',
+      fontsize: 64
+    });
+  }
+  screen.draw.rect(box, 'black', 4);
 }
 
 function draw() {
   screen.blit('background', [0, 0]);
 
   let i = 0;
-  for (let c of message) {
-    if (c !== SPACE) {
-      let box = new Rect(65 + (50 * i), 120, 50, 70);
-      screen.draw.filled_rect(box, 'lightgreen');
-      screen.draw.rect(box, 'black', 4);
-      screen.draw.text(c, {
-        center: box.center,
-        color: 'black',
-        fontsize: 64
-      });
+  for (let c of puzzle) {
+    let box = new Rect(65 + (50 * i), 120, 50, 70);
+    if (c === BLANK) {
+      if (turner.centerx < box.left) {
+        drawCharacter(box, BLANK, HIGHLIGHT_COLOR);
+      }
+      else {
+        drawCharacter(box, solved[i]);
+      }
+    }
+    else if (c !== SPACE) {
+      drawCharacter(box, c);
     }
     i++;
   }
+
+  turner.draw();
+}
+
+function update(dt) {
+  turner.update(dt);
 }
 
 window.addEventListener('load', (event) => {
