@@ -42,6 +42,8 @@ The game screen appears here if your browser supports the Canvas API.
   <button type="button" id="pause">Pause</button>
 </section>
 
+<p>Figure out the phrase by guessing the letters in it using the letter keys.</p>
+
 <h2>Attribution</h2>
 
 <p>Images licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/legalcode">Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported</a>.</p>
@@ -141,7 +143,7 @@ class AnimatedActor extends Actor {
   }
 }
 
-let solved, puzzle, turner;
+let solution, puzzle, solved, current, turner;
 
 function reset() {
   let phrase = PHRASE.trim().toUpperCase().substring(0, LENGTH);
@@ -151,10 +153,10 @@ function reset() {
     phrase = phrase.padStart(phrase.length + leftPad, SPACE);
     phrase = phrase.padEnd(LENGTH, SPACE);
   }
-  solved = Array.from(phrase);
+  solution = Array.from(phrase);
 
   puzzle = [];
-  for (let c of solved) {
+  for (let c of solution) {
     if (ALPHABET.includes(c)) {
       puzzle.push(BLANK);
     }
@@ -163,10 +165,12 @@ function reset() {
     }
   }
 
+  solved = false;
+  current = null;
+
   turner = new AnimatedActor('walkr_000', 6);
-  turner.right = 0;
   turner.centery = Math.floor(HEIGHT / 2);
-  turner.animation = animate(turner, (WIDTH + (turner.width * 2)) / WALK_RATE, {left: WIDTH}, 'linear');
+  turner.animation = null;
 }
 
 /*
@@ -190,12 +194,13 @@ function draw() {
   let i = 0;
   for (let c of puzzle) {
     let box = new Rect(65 + (50 * i), 120, 50, 70);
-    if (c === BLANK) {
+    if (ALPHABET.includes(current) && (c === current)) {
+      // Draw the reveal animation
       if (turner.centerx < box.left) {
         drawCharacter(box, BLANK, HIGHLIGHT_COLOR);
       }
       else {
-        drawCharacter(box, solved[i]);
+        drawCharacter(box, c);
       }
     }
     else if (c !== SPACE) {
@@ -204,11 +209,141 @@ function draw() {
     i++;
   }
 
-  turner.draw();
+  if (ALPHABET.includes(current) && (!solution.includes(current))) {
+    screen.draw.text('No ' + current, {
+      center: [Math.floor(WIDTH / 2), 50],
+      color: 'white',
+      fontsize: 64
+    });
+  }
+  if (solved) {
+    screen.draw.text('Solved!', {
+      center: [Math.floor(WIDTH / 2), 50],
+      color: 'white',
+      fontsize: 64
+    });
+  }
+
+  if (turner.animation instanceof Inbetweener) {
+    turner.draw();
+  }
 }
 
 function update(dt) {
-  turner.update(dt);
+  if (turner.animation instanceof Inbetweener) {
+    turner.update(dt);
+
+    if (turner.animation.done) {
+      turner.animation = null;
+    }
+  }
+}
+
+function on_key_down(key, mask, unicode) {
+  if (solved) {
+    return;
+  }
+  if (turner.animation instanceof Inbetweener) {
+    // Disable key detection during the animation
+    return;
+  }
+
+  if (key === keys.A) {
+    current = 'A';
+  }
+  else if (key === keys.B) {
+    current = 'B';
+  }
+  else if (key === keys.C) {
+    current = 'C';
+  }
+  else if (key === keys.D) {
+    current = 'D';
+  }
+  else if (key === keys.E) {
+    current = 'E';
+  }
+  else if (key === keys.F) {
+    current = 'F';
+  }
+  else if (key === keys.G) {
+    current = 'G';
+  }
+  else if (key === keys.H) {
+    current = 'H';
+  }
+  else if (key === keys.I) {
+    current = 'I';
+  }
+  else if (key === keys.J) {
+    current = 'J';
+  }
+  else if (key === keys.K) {
+    current = 'K';
+  }
+  else if (key === keys.L) {
+    current = 'L';
+  }
+  else if (key === keys.M) {
+    current = 'M';
+  }
+  else if (key === keys.N) {
+    current = 'N';
+  }
+  else if (key === keys.O) {
+    current = 'O';
+  }
+  else if (key === keys.P) {
+    current = 'P';
+  }
+  else if (key === keys.Q) {
+    current = 'Q';
+  }
+  else if (key === keys.R) {
+    current = 'R';
+  }
+  else if (key === keys.S) {
+    current = 'S';
+  }
+  else if (key === keys.T) {
+    current = 'T';
+  }
+  else if (key === keys.U) {
+    current = 'U';
+  }
+  else if (key === keys.V) {
+    current = 'V';
+  }
+  else if (key === keys.W) {
+    current = 'W';
+  }
+  else if (key === keys.X) {
+    current = 'X';
+  }
+  else if (key === keys.Y) {
+    current = 'Y';
+  }
+  else if (key === keys.Z) {
+    current = 'Z';
+  }
+  else {
+    current = null;
+  }
+
+  if (ALPHABET.includes(current) && solution.includes(current) && (!puzzle.includes(current))) {
+    // If the current guess is in PHRASE and had not been guessed already
+    // Copy over the current guess
+    for (let i = 0; i < solution.length; i++) {
+      if (solution[i] === current) {
+        puzzle[i] = current;
+      }
+    }
+    solved = puzzle.every(c => (c !== BLANK));
+
+    // Turn the corresponding letters
+    turner.right = 0;
+    turner.animation = animate(turner, (WIDTH + (turner.width * 2)) / WALK_RATE, {left: WIDTH}, 'linear');
+  }
 }
 
 window.addEventListener('load', (event) => {
