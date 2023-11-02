@@ -23,6 +23,12 @@ body {
 <body>
 <section id="imageLoader" class="hidden">
   <img class="hidden" src="images/background.png" alt="background" data-name="background">
+  <img class="hidden" src="images/walkl_1.png" alt="walkl_1" data-name="walkl_1">
+  <img class="hidden" src="images/walkl_2.png" alt="walkl_2" data-name="walkl_2">
+  <img class="hidden" src="images/walkl_3.png" alt="walkl_3" data-name="walkl_3">
+  <img class="hidden" src="images/walkl_4.png" alt="walkl_4" data-name="walkl_4">
+  <img class="hidden" src="images/walkl_5.png" alt="walkl_5" data-name="walkl_5">
+  <img class="hidden" src="images/walkl_6.png" alt="walkl_6" data-name="walkl_6">
   <img class="hidden" src="images/walkr_0001.png" alt="walkr_0001" data-name="walkr_0001">
   <img class="hidden" src="images/walkr_0002.png" alt="walkr_0002" data-name="walkr_0002">
   <img class="hidden" src="images/walkr_0003.png" alt="walkr_0003" data-name="walkr_0003">
@@ -143,7 +149,7 @@ class AnimatedActor extends Actor {
   }
 }
 
-let solution, puzzle, solved, current, turner;
+let solution, puzzle, solved, current, leftToRight, turnerToRight, turnerToLeft;
 
 function reset() {
   let phrase = PHRASE.trim().toUpperCase().substring(0, LENGTH);
@@ -168,9 +174,13 @@ function reset() {
   solved = false;
   current = null;
 
-  turner = new AnimatedActor('walkr_000', 6);
-  turner.centery = Math.floor(HEIGHT / 2);
-  turner.animation = null;
+  leftToRight = true;
+  turnerToRight = new AnimatedActor('walkr_000', 6);
+  turnerToRight.centery = Math.floor(HEIGHT / 2);
+  turnerToRight.animation = null;
+  turnerToLeft = new AnimatedActor('walkl_', 6);
+  turnerToLeft.centery = Math.floor(HEIGHT / 2);
+  turnerToLeft.animation = null;
 }
 
 /*
@@ -196,7 +206,8 @@ function draw() {
     let box = new Rect(65 + (50 * i), 120, 50, 70);
     if (ALPHABET.includes(current) && (c === current)) {
       // Draw the reveal animation
-      if (turner.centerx < box.left) {
+      if ((leftToRight && (turnerToRight.centerx < box.left)) ||
+          ((!leftToRight) && (box.right < turnerToLeft.centerx))) {
         drawCharacter(box, BLANK, HIGHLIGHT_COLOR);
       }
       else {
@@ -224,17 +235,29 @@ function draw() {
     });
   }
 
-  if (turner.animation instanceof Inbetweener) {
-    turner.draw();
+  if (turnerToRight.animation instanceof Inbetweener) {
+    turnerToRight.draw();
+  }
+  if (turnerToLeft.animation instanceof Inbetweener) {
+    turnerToLeft.draw();
   }
 }
 
 function update(dt) {
-  if (turner.animation instanceof Inbetweener) {
-    turner.update(dt);
+  if (turnerToRight.animation instanceof Inbetweener) {
+    turnerToRight.update(dt);
 
-    if (turner.animation.done) {
-      turner.animation = null;
+    if (turnerToRight.animation.done) {
+      turnerToRight.animation = null;
+      leftToRight = false;
+    }
+  }
+  if (turnerToLeft.animation instanceof Inbetweener) {
+    turnerToLeft.update(dt);
+
+    if (turnerToLeft.animation.done) {
+      turnerToLeft.animation = null;
+      leftToRight = true;
     }
   }
 }
@@ -243,7 +266,8 @@ function on_key_down(key, mask, unicode) {
   if (solved) {
     return;
   }
-  if (turner.animation instanceof Inbetweener) {
+  if ((turnerToRight.animation instanceof Inbetweener) ||
+      (turnerToLeft.animation instanceof Inbetweener)) {
     // Disable key detection during the animation
     return;
   }
@@ -341,8 +365,14 @@ function on_key_down(key, mask, unicode) {
     solved = puzzle.every(c => (c !== BLANK));
 
     // Turn the corresponding letters
-    turner.right = 0;
-    turner.animation = animate(turner, (WIDTH + (turner.width * 2)) / WALK_RATE, {left: WIDTH}, 'linear');
+    if (leftToRight) {
+      turnerToRight.right = 0;
+      turnerToRight.animation = animate(turnerToRight, (WIDTH + (turnerToRight.width * 2)) / WALK_RATE, {left: WIDTH}, 'linear');
+    }
+    else {
+      turnerToLeft.left = WIDTH;
+      turnerToLeft.animation = animate(turnerToLeft, (WIDTH + (turnerToLeft.width * 2)) / WALK_RATE, {right: 0}, 'linear');
+    }
   }
 }
 
